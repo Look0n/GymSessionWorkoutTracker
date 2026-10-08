@@ -1,0 +1,31 @@
+.form-card {
+    max-width: 700px;
+    margin: 0 auto;
+    background: #ffffff;
+    border: 1px solid #e3e6ea;
+    border-radius: 20px;
+    padding: 1.5rem 1.75rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.type-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.type-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: #f6f7f9;
+    border: 1px solid #e3e6ea;
+    border-radius: 999px;
+    padding: 0.25rem 0.8rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.type-option:hover {
+    background: #e8f0fe;
+}

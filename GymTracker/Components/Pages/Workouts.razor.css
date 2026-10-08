@@ -1,0 +1,76 @@
+.filter-panel {
+    background: #f6f7f9;
+    border-radius: 16px;
+    padding: 1.25rem;
+}
+
+.workout-card {
+    background: #ffffff;
+    border: 1px solid #e3e6ea;
+    border-radius: 20px;
+    padding: 1.25rem 1.5rem;
+    height: 100%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.workout-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.workout-name {
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.workout-desc {
+    color: #6b7280;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.attr {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.4rem 0;
+    border-top: 1px solid #f0f1f3;
+}
+
+.attr-label {
+    color: #9ca3af;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.pill {
+    display: inline-block;
+    background: #e8f0fe;
+    color: #1a56db;
+    border-radius: 999px;
+    padding: 0.1rem 0.6rem;
+    font-size: 0.78rem;
+    margin-left: 0.25rem;
+}
+
+.intensity {
+    border-radius: 999px;
+    padding: 0.1rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.intensity.low  { background: #dcfce7; color: #166534; }
+.intensity.mid  { background: #fef3c7; color: #92400e; }
+.intensity.high { background: #fee2e2; color: #991b1b; }
+
+.empty-state {
+    text-align: center;
+    color: #6b7280;
+    padding: 3rem 1rem;
+    background: #f6f7f9;
+    border-radius: 16px;
+}

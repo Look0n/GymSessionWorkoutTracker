@@ -1,0 +1,88 @@
+@page "/workouts/create"
+@rendermode InteractiveServer
+@using GymTracker.Models
+
+<PageTitle>Create Workout</PageTitle>
+
+<h1 class="mb-3 text-center">Create New Workout</h1>
+
+<div class="form-card">
+    <EditForm EditContext="editContext" OnSubmit="HandleSubmit">
+        <DataAnnotationsValidator />
+
+        <div class="mb-3">
+            <label class="form-label">Name <span class="text-danger">*</span></label>
+            <InputText class="form-control" @bind-Value="form.Name" placeholder="e.g. Romanian Deadlift" />
+            <ValidationMessage For="() => form.Name" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Description <span class="text-muted">(optional)</span></label>
+            <InputTextArea class="form-control" rows="3" @bind-Value="form.Description"
+                           placeholder="What is this workout and how is it done?" />
+            <ValidationMessage For="() => form.Description" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Workout type <span class="text-danger">*</span></label>
+            <div class="type-grid">
+                @foreach (var t in Enum.GetValues<WorkoutType>())
+                {
+                    <label class="type-option">
+                        <input type="checkbox"
+                               checked="@selectedTypes.Contains(t)"
+                               @onchange="e => ToggleType(t, (bool)e.Value!)" />
+                        <span>@t</span>
+                    </label>
+                }
+            </div>
+            @if (typeError != null)
+            {
+                <div class="text-danger small mt-1">@typeError</div>
+            }
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-12 col-md-6">
+                <label class="form-label">Body target</label>
+                <InputSelect class="form-select" @bind-Value="form.BodyTarget">
+                    @foreach (var b in Enum.GetValues<BodyTarget>())
+                    {
+                        <option value="@b">@b</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label class="form-label">Equipment</label>
+                <InputSelect class="form-select" @bind-Value="form.Equipment">
+                    @foreach (var e in Enum.GetValues<Equipment>())
+                    {
+                        <option value="@e">@e</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label class="form-label">Intensity</label>
+                <InputSelect class="form-select" @bind-Value="form.Intensity">
+                    @foreach (var i in Enum.GetValues<Intensity>())
+                    {
+                        <option value="@i">@i</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label class="form-label">Duration in minutes <span class="text-muted">(optional)</span></label>
+                <InputNumber class="form-control" @bind-Value="form.Duration" />
+                <ValidationMessage For="() => form.Duration" />
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 justify-content-end">
+            <a class="btn btn-outline-secondary" href="workouts">Cancel</a>
+            <button type="submit" class="btn btn-primary">Save Workout</button>
+        </div>
+    </EditForm>
+</div>

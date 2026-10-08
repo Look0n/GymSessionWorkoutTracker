@@ -1,0 +1,161 @@
+@page "/workouts"
+@rendermode InteractiveServer
+@using GymTracker.Data
+@using GymTracker.Models
+
+<PageTitle>Workouts</PageTitle>
+
+<h1 class="mb-3">Workouts</h1>
+
+<div class="filter-panel mb-4">
+    <div class="row g-3">
+        <div class="col-12 col-md-6 col-lg-4">
+            <label class="form-label">Name</label>
+            <input class="form-control" placeholder="Search by name"
+                   @bind="nameFilter" @bind:event="oninput" />
+        </div>
+
+        <div class="col-6 col-md-3 col-lg-2">
+            <label class="form-label">Type</label>
+            <select class="form-select" @bind="typeFilter">
+                <option value="">All</option>
+                @foreach (var t in Enum.GetValues<WorkoutType>())
+                {
+                    <option value="@t">@t</option>
+                }
+            </select>
+        </div>
+
+        <div class="col-6 col-md-3 col-lg-2">
+            <label class="form-label">Body target</label>
+            <select class="form-select" @bind="bodyFilter">
+                <option value="">All</option>
+                @foreach (var b in Enum.GetValues<BodyTarget>())
+                {
+                    <option value="@b">@b</option>
+                }
+            </select>
+        </div>
+
+        <div class="col-6 col-md-3 col-lg-2">
+            <label class="form-label">Equipment</label>
+            <select class="form-select" @bind="equipmentFilter">
+                <option value="">All</option>
+                @foreach (var e in Enum.GetValues<Equipment>())
+                {
+                    <option value="@e">@e</option>
+                }
+            </select>
+        </div>
+
+        <div class="col-6 col-md-3 col-lg-2">
+            <label class="form-label">Intensity</label>
+            <select class="form-select" @bind="intensityFilter">
+                <option value="">All</option>
+                @foreach (var i in Enum.GetValues<Intensity>())
+                {
+                    <option value="@i">@i</option>
+                }
+            </select>
+        </div>
+
+        <div class="col-6 col-md-3 col-lg-2">
+            <label class="form-label">Source</label>
+            <select class="form-select" @bind="sourceFilter">
+                <option value="">All</option>
+                <option value="user">User created</option>
+                <option value="builtin">Built-in</option>
+            </select>
+        </div>
+
+        <div class="col-6 col-md-3 col-lg-2">
+            <label class="form-label">Status</label>
+            <select class="form-select" @bind="statusFilter">
+                <option value="all">All</option>
+                <option value="excluded">Excluded</option>
+                <option value="included">Included</option>
+            </select>
+        </div>
+
+        <div class="col-6 col-md-3 col-lg-2">
+            <label class="form-label">Min minutes</label>
+            <input type="number" class="form-control"
+                   @bind="minDuration" @bind:event="oninput" />
+        </div>
+
+        <div class="col-6 col-md-3 col-lg-2">
+            <label class="form-label">Max minutes</label>
+            <input type="number" class="form-control"
+                   @bind="maxDuration" @bind:event="oninput" />
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-2 d-flex align-items-end">
+            <button class="btn btn-outline-secondary w-100" @onclick="ClearFilters">Clear filters</button>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <p class="text-muted mb-0">Showing @FilteredWorkouts.Count() of @allWorkouts.Count workouts</p>
+    <a class="btn btn-primary" href="workouts/create">Create Workout</a>
+</div>
+
+@if (!FilteredWorkouts.Any())
+{
+    <div class="empty-state">No workouts match your filters.</div>
+}
+else
+{
+    <div class="row g-4">
+        @foreach (var w in FilteredWorkouts)
+        {
+            <div class="col-12 col-md-6 col-xl-4">
+                <div class="workout-card">
+                    <h5 class="workout-name">@w.Name</h5>
+                    <p class="workout-desc">@w.Description</p>
+
+                    <div class="attr">
+                        <span class="attr-label">Type</span>
+                        <span>
+                            @foreach (var t in w.WorkoutType)
+                            {
+                                <span class="pill">@t</span>
+                            }
+                        </span>
+                    </div>
+
+                    <div class="attr">
+                        <span class="attr-label">Body target</span>
+                        <span>@w.BodyTarget</span>
+                    </div>
+
+                    <div class="attr">
+                        <span class="attr-label">Equipment</span>
+                        <span>@w.Equipment</span>
+                    </div>
+
+                    <div class="attr">
+                        <span class="attr-label">Duration</span>
+                        <span>@w.Duration min</span>
+                    </div>
+
+                    <div class="attr">
+                        <span class="attr-label">Intensity</span>
+                        <span class="intensity @IntensityClass(w.Intensity)">@w.Intensity</span>
+                    </div>
+
+                    <div class="attr">
+                        <button class="btn btn-sm w-100 mt-3 @(w.ExcludeByDefault ? "btn-warning" : "btn-outline-warning")"
+                                @onclick="() => ToggleExclude(w)">
+                            @(w.ExcludeByDefault ? "Include" : "Exclude")
+                        </button>
+
+                        <button class="btn btn-sm btn-danger w-100 mt-3" @onclick="() => DeleteWorkout(w)">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
