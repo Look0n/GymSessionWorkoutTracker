@@ -9,6 +9,8 @@ public partial class Workouts
 {
     [Inject] private IWorkoutService Service { get; set; } = default!;
 
+    private string? deleteError;
+
     private List<Workout> allWorkouts = new();
 
     private string nameFilter = "";
@@ -61,7 +63,20 @@ public partial class Workouts
 
     private void DeleteWorkout(Workout w)
     {
-        Service.Delete(w);
-        allWorkouts.Remove(w);
+        deleteError = null;
+        try
+        {
+            Service.Delete(w);
+            allWorkouts.Remove(w);
+        }
+        catch (InvalidOperationException ex)
+        {
+            deleteError = ex.Message;
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+        {
+            // The database foreign key also protects against concurrent linking.
+            deleteError = "The workout could not be deleted. It may belong to a session. Refresh and try again.";
+        }
     }
 }

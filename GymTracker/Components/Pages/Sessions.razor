@@ -1,0 +1,55 @@
+@page "/sessions"
+@rendermode InteractiveServer
+@using GymTracker.Models
+@using GymTracker.Services
+@inject ISessionService Service
+
+<PageTitle>Sessions</PageTitle>
+<h1>Sessions</h1>
+<p class="text-muted">Plan and track your current workout sessions.</p>
+<div class="mb-4">
+    <a class="btn btn-primary" href="sessions/create">Create Session</a>
+</div>
+<div class="mb-4">
+    <label for="session-search" class="form-label">Search current sessions</label>
+    <input id="session-search" class="form-control" @bind="search" @bind:event="oninput" />
+</div>
+@if (!Filtered.Any())
+{
+    <p class="alert alert-info">No sessions match this view.</p>
+}
+else
+{
+    <div class="row g-3">
+        @foreach (var session in Filtered)
+        {
+            <div class="col-md-6 col-xl-4" @key="session.Id">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h2 class="h5">@session.Name</h2>
+                        <p>@session.Date.ToString("dd MMM yyyy") · @StatusLabel(session.Status)</p>
+                        @if (session.IsArchived) { <p class="badge bg-secondary">Archived</p> }
+                        <p>@session.SessionWorkouts.Count workouts · @session.SessionWorkouts.Count(sw => sw.IsCompleted) completed</p>
+                        <p>Duration: @(session.DurationMinutes.HasValue ? $"{session.DurationMinutes.Value:0.##} min" : "Not recorded")</p>
+                        <a class="btn btn-outline-primary" href="@($"sessions/{session.Id}")">View Session</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<Session> sessions = new();
+    private string search = "";
+    private IEnumerable<Session> Filtered => sessions.Where(s =>
+        s.Name.Contains(search, StringComparison.OrdinalIgnoreCase));
+
+    protected override void OnInitialized()
+    {
+        sessions = Service.GetAll();
+    }
+
+    private static string StatusLabel(SessionStatus value) =>
+        value == SessionStatus.InProgress ? "In Progress" : value.ToString();
+}

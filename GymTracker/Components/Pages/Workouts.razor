@@ -6,6 +6,10 @@
 <PageTitle>Workouts</PageTitle>
 
 <h1 class="mb-3">Workouts</h1>
+@if (!string.IsNullOrEmpty(deleteError))
+{
+    <div class="alert alert-danger" role="alert">@deleteError</div>
+}
 
 <div class="filter-panel mb-4">
     <div class="row g-3">

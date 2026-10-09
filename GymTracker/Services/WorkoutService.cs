@@ -28,6 +28,12 @@ public class WorkoutService : IWorkoutService
 
     public void Delete(Workout workout)
     {
+        // Include every session, including archived sessions, to protect history.
+        if (_db.SessionWorkouts.Any(sw => sw.WorkoutId == workout.Id))
+        {
+            throw new InvalidOperationException(
+                "This workout belongs to a session and cannot be deleted. Use Exclude instead.");
+        }
         _db.Workouts.Remove(workout);
         _db.SaveChanges();
     }

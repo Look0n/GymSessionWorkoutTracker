@@ -1,0 +1,173 @@
+@page "/sessions/create"
+@page "/sessions/{Id:int}/edit"
+@rendermode InteractiveServer
+@using System.ComponentModel.DataAnnotations
+@using GymTracker.Models
+@using GymTracker.Services
+@inject ISessionService Service
+@inject IWorkoutService WorkoutService
+@inject NavigationManager Navigation
+
+<PageTitle>@(Id.HasValue ? "Edit Session" : "Create Session")</PageTitle>
+<h1>@(Id.HasValue ? "Edit Session" : "Create Session")</h1>
+@if (!string.IsNullOrEmpty(error)) { <div class="alert alert-danger" role="alert">@error</div> }
+@if (canEdit)
+{
+    <EditForm Model="form" OnValidSubmit="Save" FormName="session-editor">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        @if (!Id.HasValue)
+        {
+            <div class="mb-3">
+                <label for="session-mode" class="form-label">Session type</label>
+                <select id="session-mode" class="form-select" @bind="sessionType">
+                    <option value="planned">Plan a session</option>
+                    <option value="completed">Record a completed session</option>
+                </select>
+            </div>
+        }
+        <div class="mb-3">
+            <label for="session-name" class="form-label">Name</label>
+            <InputText id="session-name" class="form-control" @bind-Value="form.Name" />
+        </div>
+        <div class="mb-3">
+            <label for="session-date" class="form-label">@(historical ? "Session date" : "Planned date")</label>
+            <InputDate id="session-date" class="form-control" @bind-Value="form.Date" />
+        </div>
+        @if (historical)
+        {
+            <div class="mb-3">
+                <label for="session-duration" class="form-label">Total duration in minutes, including rest</label>
+                <InputNumber id="session-duration" class="form-control" @bind-Value="form.Duration" step="any" min="0.01" />
+            </div>
+        }
+        @if (Id.HasValue)
+        {
+            <div class="mb-3">
+                <label for="session-notes" class="form-label">Notes</label>
+                <InputTextArea id="session-notes" class="form-control" @bind-Value="form.Notes" />
+            </div>
+        }
+        <h2 class="h5">Add workouts</h2>
+        <p class="text-muted">Excluded workouts are hidden from this selector.</p>
+        <label for="workout-search" class="form-label">Search workouts</label>
+        <input id="workout-search" class="form-control mb-3" @bind="workoutSearch" @bind:event="oninput" />
+        <div class="d-flex flex-wrap gap-2 mb-4">
+            @foreach (var workout in available.Where(w => !selected.Contains(w.Id) && w.Name.Contains(workoutSearch, StringComparison.OrdinalIgnoreCase)))
+            {
+                <button type="button" class="btn btn-outline-primary" @onclick="() => selected.Add(workout.Id)">@workout.Name +</button>
+            }
+        </div>
+        @if (available.Count == 0) { <p>No included workouts are available. Include a workout on the Workouts page first.</p> }
+        <h2 class="h5">Selected workouts (@selected.Count)</h2>
+        <p class="text-muted">Use Up and Down to set exercise order.</p>
+        @foreach (var workoutId in selected.ToList())
+        {
+            var index = selected.IndexOf(workoutId);
+            var workout = known.Single(w => w.Id == workoutId);
+            <div class="border rounded p-2 mb-2 d-flex flex-wrap align-items-center gap-2" @key="workoutId">
+                <span class="me-auto">@(index + 1). @workout.Name @(workout.ExcludeByDefault ? "(excluded; already in this session)" : "")</span>
+                <button type="button" class="btn btn-sm btn-outline-secondary" disabled="@(index == 0)" @onclick="() => Move(workoutId, -1)">Up</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" disabled="@(index == selected.Count - 1)" @onclick="() => Move(workoutId, 1)">Down</button>
+                <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => selected.Remove(workoutId)">Remove</button>
+            </div>
+        }
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">Save Session</button>
+            <a class="btn btn-outline-secondary" href="@(Id.HasValue ? $"sessions/{Id}" : "sessions")">Cancel</a>
+        </div>
+    </EditForm>
+}
+else
+{
+    <a href="sessions">Back to Sessions</a>
+}
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    private SessionForm form = new();
+    private string sessionType = "planned";
+    private bool historical
+    {
+        get => sessionType == "completed";
+        set => sessionType = value ? "completed" : "planned";
+    }
+    private bool canEdit;
+    private string? error;
+    private string workoutSearch = "";
+    private List<Workout> known = new();
+    private List<Workout> available = new();
+    private List<int> selected = new();
+
+    private sealed class SessionForm
+    {
+        [Required, StringLength(100)] public string Name { get; set; } = "";
+        public DateTime Date { get; set; } = DateTime.Today;
+        public double? Duration { get; set; }
+        [StringLength(2000)] public string? Notes { get; set; }
+    }
+
+    protected override void OnParametersSet()
+    {
+        error = null;
+        form = new();
+        selected = new();
+        historical = false;
+        canEdit = true;
+        known = WorkoutService.GetAll();
+        available = known.Where(w => !w.ExcludeByDefault).OrderBy(w => w.Name).ToList();
+        if (Id.HasValue)
+        {
+            var session = Service.GetById(Id.Value);
+            if (session == null || session.IsArchived)
+            {
+                error = session == null ? "Session not found." : "Archived sessions are read-only.";
+                canEdit = false;
+                return;
+            }
+            form = new SessionForm { Name = session.Name, Date = session.Date,
+                Duration = session.DurationMinutes, Notes = session.Notes };
+            historical = session.Status == SessionStatus.Completed;
+            selected = session.SessionWorkouts.OrderBy(sw => sw.Order).Select(sw => sw.WorkoutId).ToList();
+        }
+    }
+
+    private void Move(int workoutId, int offset)
+    {
+        var index = selected.IndexOf(workoutId);
+        var target = index + offset;
+        if (target < 0 || target >= selected.Count) return;
+        (selected[index], selected[target]) = (selected[target], selected[index]);
+    }
+
+    private void Save()
+    {
+        error = null;
+        int savedId;
+        try
+        {
+            if (historical && (!form.Duration.HasValue ||
+                !double.IsFinite(form.Duration.Value) || form.Duration.Value <= 0))
+                throw new ArgumentException("Enter a duration greater than zero.");
+            if (Id.HasValue)
+            {
+                Service.Update(Id.Value, form.Name, form.Date, selected, form.Notes,
+                    historical ? form.Duration : null);
+                savedId = Id.Value;
+            }
+            else
+            {
+                var session = historical
+                    ? Service.CreateSession(form.Name, form.Date, selected, form.Duration!.Value)
+                    : Service.CreateSession(form.Name, form.Date, selected);
+                savedId = session.Id;
+            }
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            error = ex.Message;
+            return;
+        }
+        Navigation.NavigateTo($"sessions/{savedId}");
+    }
+}

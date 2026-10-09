@@ -1,0 +1,72 @@
+@page "/sessions/history"
+@rendermode InteractiveServer
+@using GymTracker.Models
+@using GymTracker.Services
+@inject ISessionService Service
+
+<PageTitle>Session History</PageTitle>
+<h1>Session History</h1>
+<p class="text-muted">History of archived and completed sessions.</p>
+<div class="mb-4">
+    <label for="history-search" class="form-label">Search session history</label>
+    <input id="history-search" class="form-control" @bind="search" @bind:event="oninput" />
+</div>
+@if (!Filtered.Any())
+{
+    <p class="alert alert-info">No sessions match your history search.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <caption>Completed and archived sessions, newest date first.</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col">Session</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Duration</th>
+                    <th scope="col">Workout progress</th>
+                    <th scope="col">Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var session in Filtered)
+                {
+                    <tr @key="session.Id">
+                        <td class="text-nowrap">@session.Date.ToString("dd MMM yyyy")</td>
+                        <td>@session.Name</td>
+                        <td>
+                            <span>@StatusLabel(session.Status)</span>
+                            @if (session.IsArchived)
+                            {
+                                <span class="badge bg-secondary ms-1">Archived</span>
+                            }
+                        </td>
+                        <td>@(session.DurationMinutes.HasValue ? $"{session.DurationMinutes.Value:0.##} min" : "Not recorded")</td>
+                        <td>@session.SessionWorkouts.Count(sw => sw.IsCompleted) / @session.SessionWorkouts.Count completed</td>
+                        <td>
+                            <a class="btn btn-sm btn-outline-primary" href="@($"sessions/{session.Id}")"
+                               aria-label="@($"View session: {session.Name}")">View Session</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<Session> sessions = new();
+    private string search = "";
+    private IEnumerable<Session> Filtered => sessions.Where(s =>
+        s.Name.Contains(search, StringComparison.OrdinalIgnoreCase));
+
+    protected override void OnInitialized()
+    {
+        sessions = Service.GetHistory();
+    }
+
+    private static string StatusLabel(SessionStatus value) =>
+        value == SessionStatus.InProgress ? "In Progress" : value.ToString();
+}

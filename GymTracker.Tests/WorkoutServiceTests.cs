@@ -90,14 +90,57 @@ public class WorkoutServiceTests
     }
 
     [Test]
-    public void Delete_RemovesWorkout()
+    public void Delete_UnusedWorkout()
+        {
+            var workout = MakeWorkout();
+            _service.Add(workout);
+            _service.Delete(workout);
+            _db.ChangeTracker.Clear();
+            Assert.That(_db.Workouts.ToList(), Is.Empty);
+        }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Delete_ReferencedWorkout_Throws(bool archived)
     {
         var workout = MakeWorkout();
         _service.Add(workout);
+        _db.Sessions.Add(new Session
+        {
+            Name = "Upper Body",
+            Date = DateTime.Today,
+            IsArchived = archived,
+            SessionWorkouts = new List<SessionWorkout>
+            {
+                new() { WorkoutId = workout.Id, Order = 1 }
+            }
+        });
+        _db.SaveChanges();
 
-        _service.Delete(workout);
+        Assert.Throws<InvalidOperationException>(() => _service.Delete(workout));
+        _db.ChangeTracker.Clear();
+        Assert.That(_db.Workouts.Count(), Is.EqualTo(1));
+        Assert.That(_db.SessionWorkouts.Count(), Is.EqualTo(1));
+    }
 
-        Assert.That(_service.GetAll(), Is.Empty);
+    [Test]
+    public void Database_ReferencedDelete_Throws()
+    {
+        var workout = MakeWorkout();
+        _service.Add(workout);
+        _db.Sessions.Add(new Session
+        {
+            Name = "Protected session",
+            Date = DateTime.Today,
+            SessionWorkouts = new List<SessionWorkout>
+            {
+                new() { WorkoutId = workout.Id, Order = 1 }
+            }
+        });
+        _db.SaveChanges();
+        _db.ChangeTracker.Clear();
+        _db.Workouts.Remove(_db.Workouts.Single());
+        Assert.Throws<DbUpdateException>(() => _db.SaveChanges());
     }
 
     [Test]

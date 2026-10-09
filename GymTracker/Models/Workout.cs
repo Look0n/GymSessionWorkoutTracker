@@ -16,6 +16,9 @@ public class Workout
     public bool UserCreated { get; set; }
     public bool ExcludeByDefault { get; set; }
     public int TimesPerformed { get; set; }
+
+    //Sessions that include this workout
+    public List<SessionWorkout> SessionWorkouts { get; set; } = new();
 }
 
 public enum Intensity

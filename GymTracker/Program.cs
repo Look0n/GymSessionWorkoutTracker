@@ -9,8 +9,10 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddDbContext<GymContext>();
-
 builder.Services.AddScoped<IWorkoutService, WorkoutService>();
+builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
+builder.Services.AddScoped<ISessionService, SessionService>();
+
 
 var app = builder.Build();
 
@@ -20,6 +22,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<GymContext>();
     db.Database.EnsureCreated();
     SeedData.Initialize(db);
+    SeedData.InitializeSessions(db); 
 }
 
 // Configure the HTTP request pipeline.

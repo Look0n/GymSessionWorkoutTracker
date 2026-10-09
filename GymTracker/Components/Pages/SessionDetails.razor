@@ -1,0 +1,178 @@
+@page "/sessions/{Id:int}"
+@rendermode InteractiveServer
+@implements IDisposable
+@using GymTracker.Models
+@using GymTracker.Services
+@inject ISessionService Service
+@inject TimeProvider Clock
+@inject NavigationManager Navigation
+
+<PageTitle>Session Details</PageTitle>
+@if (!string.IsNullOrEmpty(error)) { <div class="alert alert-danger" role="alert">@error</div> }
+@if (session == null)
+{
+    <h1>Session not found</h1>
+    <a href="sessions">Back to Sessions</a>
+}
+else
+{
+    <h1>@session.Name</h1>
+    <p>@session.Date.ToString("dd MMM yyyy") · @(session.Status == SessionStatus.InProgress ? "In Progress" : session.Status.ToString())</p>
+    @if (session.IsArchived) { <p class="alert alert-secondary">Archived — this session is read-only.</p> }
+    <div class="card mb-4">
+        <div class="card-body">
+            <h2 class="h5">@(session.Status == SessionStatus.InProgress ? "Elapsed time" : "Total duration")</h2>
+            <p class="fs-3 mb-1">@DurationLabel</p>
+            <p class="text-muted">Includes rest time. There is no pause function.</p>
+            <p>@session.SessionWorkouts.Count(sw => sw.IsCompleted) of @session.SessionWorkouts.Count workouts completed</p>
+            @if (!string.IsNullOrWhiteSpace(session.Notes)) { <p class="mb-0">@session.Notes</p> }
+        </div>
+    </div>
+    @if (!session.IsArchived)
+    {
+        <div class="d-flex flex-wrap gap-2 mb-4">
+            @if (session.Status == SessionStatus.Planned)
+            {
+                <button class="btn btn-success" @onclick="() => Run(() => Service.Start(Id))">Start Session</button>
+            }
+            @if (session.Status == SessionStatus.InProgress)
+            {
+                <button class="btn btn-success" @onclick="() => Run(() => Service.Complete(Id))">Complete Session</button>
+            }
+            <a class="btn btn-outline-primary" href="@($"sessions/{Id}/edit")">Edit Session</a>
+            <button class="btn btn-outline-danger" @onclick="() => confirmArchive = true">Archive Session</button>
+        </div>
+        @if (confirmArchive)
+        {
+            <div class="alert alert-warning">
+                <p>Archive this session? It will become read-only. There is no restore option.</p>
+                @if (session.Status == SessionStatus.InProgress)
+                {
+                    <p>This session is still in progress. Archive does not mark it complete.</p>
+                }
+                <button class="btn btn-danger me-2" @onclick="Archive">Confirm Archive</button>
+                <button class="btn btn-outline-secondary" @onclick="() => confirmArchive = false">Cancel</button>
+            </div>
+        }
+    }
+    <h2 class="h4">Workouts</h2>
+    @if (session.Status == SessionStatus.InProgress && !session.IsArchived)
+    {
+        <p class="text-muted">You may complete the session with some workouts unfinished.</p>
+    }
+    @foreach (var item in session.SessionWorkouts.OrderBy(sw => sw.Order))
+    {
+        <div class="card mb-2" @key="item.WorkoutId">
+            <div class="card-body d-flex flex-wrap gap-3 align-items-center">
+                <div class="me-auto">
+                    <h3 class="h5">@item.Order. @item.Workout.Name</h3>
+                    <p class="mb-0">@item.Workout.BodyTarget · @item.Workout.Equipment</p>
+                    @if (item.Workout.ExcludeByDefault) { <small class="text-muted">Excluded from new session selection</small> }
+                </div>
+                <label class="d-flex gap-2 align-items-center">
+                    <input type="checkbox" checked="@item.IsCompleted"
+                           disabled="@(session.IsArchived || session.Status == SessionStatus.Planned)"
+                           @onchange="e => SetCompletion(item.WorkoutId, e)" />
+                    Completed
+                </label>
+            </div>
+        </div>
+    }
+    <div class="d-flex gap-3 mt-4">
+        <a href="sessions">All Sessions</a>
+        <a href="sessions/history">Session History</a>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Session? session;
+    private string? error;
+    private bool confirmArchive;
+    private DateTime utcNow;
+    private readonly CancellationTokenSource cancellation = new();
+    private bool disposed;
+
+    private string DurationLabel
+    {
+        get
+        {
+            if (session == null) return "Not recorded";
+            if (session.Status == SessionStatus.InProgress && session.StartedAtUtc.HasValue)
+            {
+                var elapsed = utcNow - session.StartedAtUtc.Value;
+                if (elapsed < TimeSpan.Zero) elapsed = TimeSpan.Zero;
+                return $"{(int)elapsed.TotalHours:00}:{elapsed.Minutes:00}:{elapsed.Seconds:00}";
+            }
+            return session.DurationMinutes.HasValue ? $"{session.DurationMinutes.Value:0.##} minutes" : "Not recorded";
+        }
+    }
+
+    protected override void OnInitialized() => _ = Tick();
+
+    protected override void OnParametersSet()
+    {
+        error = null;
+        confirmArchive = false;
+        Load();
+    }
+
+    private void Load()
+    {
+        session = Service.GetById(Id);
+        utcNow = Clock.GetUtcNow().UtcDateTime;
+    }
+
+    private void Run(Action action)
+    {
+        error = null;
+        try
+        {
+            action();
+            Load();
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            error = ex.Message;
+        }
+    }
+
+    private void SetCompletion(int workoutId, ChangeEventArgs args)
+    {
+        Run(() => Service.SetWorkoutCompletion(Id, workoutId, args.Value is true));
+    }
+
+    private void Archive()
+    {
+        Run(() => Service.Archive(Id));
+        confirmArchive = false;
+    }
+
+    private async Task Tick()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+        var token = cancellation.Token;
+        try
+        {
+            while (await timer.WaitForNextTickAsync(token))
+            {
+                await InvokeAsync(() =>
+                {
+                    if (disposed) return;
+                    // Update display only; database timestamps remain authoritative.
+                    utcNow = Clock.GetUtcNow().UtcDateTime;
+                    if (session?.Status == SessionStatus.InProgress && !session.IsArchived)
+                        StateHasChanged();
+                });
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    public void Dispose()
+    {
+        disposed = true;
+        cancellation.Cancel();
+        cancellation.Dispose();
+    }
+}
