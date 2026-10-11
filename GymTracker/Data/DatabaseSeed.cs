@@ -4,11 +4,9 @@ namespace GymTracker.Data;
 
 public static class SeedData
 {
-    public static void Initialize(GymContext db)
+    public static void InitaliseWorkouts(GymContext db)
     {
-        // Only seed an empty table
         if (db.Workouts.Any()) return;
-
         var workouts = new List<Workout>
         {
             // Cardio
@@ -186,237 +184,222 @@ public static class SeedData
         db.SaveChanges();
     }
 
-    public static void InitializeSessions(GymContext db)
-{
-    // Only seed an empty table
-    if (db.Sessions.Any()) return;
-
-    var workouts = db.Workouts.ToDictionary(w => w.Name, w => w.Id);
-
-    // Link each session to existing workouts by name.
-    SessionWorkout Link(string name, int order, bool completed = false)
+    public static void InitaliseSessions(GymContext db)
     {
-        return new SessionWorkout
-        {
-            WorkoutId = workouts[name],
-            Order = order,
-            IsCompleted = completed
-        };
-    }
+        // Only seed an empty table
+        if (db.Sessions.Any()) return;
 
-    var sessions = new List<Session>
-    {
-        // Current sessions
-        new()
-        {
-            Name = "Chest and Triceps",
-            Date = DateTime.Today.AddDays(1),
-            Status = SessionStatus.Planned,
-            Notes = "Upper-body strength session.",
-            SessionWorkouts =
-            [
-                Link("Arm Circles", 1),
-                Link("Bench Press", 2),
-                Link("Incline Dumbbell Press", 3),
-                Link("Tricep Pushdowns", 4)
-            ]
-        },
-        new()
-        {
-            Name = "Lower Body Strength",
-            Date = DateTime.Today.AddDays(3),
-            Status = SessionStatus.Planned,
-            Notes = "Leg strength training with a cooldown.",
-            SessionWorkouts =
-            [
-                Link("Back Squat", 1),
-                Link("Leg Press", 2),
-                Link("Hamstring Stretch", 3)
-            ]
-        },
-        new()
-        {
-            Name = "Back and Core",
-            Date = DateTime.Today.AddDays(5),
-            Status = SessionStatus.Planned,
-            Notes = "Back exercises followed by core training.",
-            SessionWorkouts =
-            [
-                Link("Lat Pulldown", 1),
-                Link("Seated Cable Row", 2),
-                Link("Plank", 3),
-                Link("Child's Pose", 4)
-            ]
-        },
+        var workouts = db.Workouts.ToDictionary(w => w.Name, w => w.Id);
 
-        // History: chest
-        new()
+        // Link each session to existing workouts by name.
+        SessionWorkout Link(string name, int order, bool completed = false)
         {
-            Name = "Chest Strength",
-            Date = DateTime.Today.AddDays(-1),
-            Status = SessionStatus.Completed,
-            DurationMinutes = 70,
-            Notes = "Completed all exercises, including rest between sets.",
-            SessionWorkouts =
-            [
-                Link("Arm Circles", 1, true),
-                Link("Bench Press", 2, true),
-                Link("Incline Dumbbell Press", 3, true),
-                Link("Push-Ups", 4, true)
-            ]
-        },
-
-        // History: legs
-        new()
-        {
-            Name = "Leg Strength",
-            Date = DateTime.Today.AddDays(-3),
-            Status = SessionStatus.Completed,
-            DurationMinutes = 75,
-            Notes = "Completed squat and leg press training with a cooldown.",
-            SessionWorkouts =
-            [
-                Link("Back Squat", 1, true),
-                Link("Leg Press", 2, true),
-                Link("Hamstring Stretch", 3, true)
-            ]
-        },
-
-        // History: core
-        new()
-        {
-            Name = "Core Conditioning",
-            Date = DateTime.Today.AddDays(-5),
-            Status = SessionStatus.Completed,
-            DurationMinutes = 35,
-            Notes = "Focused on controlled movement and core endurance.",
-            SessionWorkouts =
-            [
-                Link("Plank", 1, true),
-                Link("Cable Woodchop", 2, true),
-                Link("Pilates Hundred", 3, true)
-            ]
-        },
-
-        // History: back — partially completed
-        new()
-        {
-            Name = "Back and Pulling",
-            Date = DateTime.Today.AddDays(-7),
-            Status = SessionStatus.Completed,
-            DurationMinutes = 40,
-            Notes = "Finished early; deadlifts were not completed.",
-            SessionWorkouts =
-            [
-                Link("Lat Pulldown", 1, true),
-                Link("Seated Cable Row", 2, true),
-                Link("Deadlift", 3)
-            ]
-        },
-
-        // History: shoulders
-        new()
-        {
-            Name = "Shoulder Training",
-            Date = DateTime.Today.AddDays(-9),
-            Status = SessionStatus.Completed,
-            DurationMinutes = 55,
-            Notes = "Completed shoulder exercises after warming up.",
-            SessionWorkouts =
-            [
-                Link("Arm Circles", 1, true),
-                Link("Overhead Press", 2, true),
-                Link("Lateral Raises", 3, true),
-                Link("Face Pulls", 4, true)
-            ]
-        },
-
-        // History: cardio
-        new()
-        {
-            Name = "Cardio and Flexibility",
-            Date = DateTime.Today.AddDays(-12),
-            Status = SessionStatus.Completed,
-            DurationMinutes = 50,
-            Notes = "Steady treadmill run followed by stretching.",
-            SessionWorkouts =
-            [
-                Link("Treadmill Run", 1, true),
-                Link("Hamstring Stretch", 2, true),
-                Link("Child's Pose", 3, true)
-            ]
-        },
-
-        // History: arms — partially completed
-        new()
-        {
-            Name = "Arms Express",
-            Date = DateTime.Today.AddDays(-15),
-            Status = SessionStatus.Completed,
-            DurationMinutes = 35,
-            Notes = "Completed arm exercises but skipped the final push-ups.",
-            SessionWorkouts =
-            [
-                Link("Bicep Curls", 1, true),
-                Link("Tricep Pushdowns", 2, true),
-                Link("Push-Ups", 3)
-            ]
-        },
-
-        // History: power
-        new()
-        {
-            Name = "Lower Body Power",
-            Date = DateTime.Today.AddDays(-18),
-            Status = SessionStatus.Completed,
-            DurationMinutes = 65,
-            Notes = "Power training with rest between exercises.",
-            SessionWorkouts =
-            [
-                Link("Treadmill Sprints", 1, true),
-                Link("Box Jumps", 2, true),
-                Link("Leg Press", 3, true),
-                Link("Hamstring Stretch", 4, true)
-            ]
-        },
-
-        // Archived history: recovery
-        new()
-        {
-            Name = "Core and Recovery",
-            Date = DateTime.Today.AddDays(-21),
-            Status = SessionStatus.Completed,
-            DurationMinutes = 25,
-            IsArchived = true,
-            Notes = "Archived recovery session.",
-            SessionWorkouts =
-            [
-                Link("Pilates Hundred", 1, true),
-                Link("Plank", 2, true),
-                Link("Child's Pose", 3, true)
-            ]
-        },
-
-        // Archived history: back — partially completed
-        new()
-        {
-            Name = "Back Strength",
-            Date = DateTime.Today.AddDays(-28),
-            Status = SessionStatus.Completed,
-            DurationMinutes = 55,
-            IsArchived = true,
-            Notes = "Completed lifting exercises but skipped the cooldown.",
-            SessionWorkouts =
-            [
-                Link("Deadlift", 1, true),
-                Link("Seated Cable Row", 2, true),
-                Link("Lat Pulldown", 3, true),
-                Link("Child's Pose", 4)
-            ]
+            return new SessionWorkout
+            {
+                WorkoutId = workouts[name],
+                Order = order,
+                IsCompleted = completed
+            };
         }
-    };
 
-    db.Sessions.AddRange(sessions);
-    db.SaveChanges();
-}
+        var sessions = new List<Session>
+        {
+            // Current sessions
+            new()
+            {
+                Name = "Chest and Triceps",
+                Date = DateTime.Today.AddDays(1),
+                Status = SessionStatus.Planned,
+                Notes = "Upper-body strength session.",
+                SessionWorkouts =
+                [
+                    Link("Arm Circles", 1),
+                    Link("Bench Press", 2),
+                    Link("Incline Dumbbell Press", 3),
+                    Link("Tricep Pushdowns", 4)
+                ]
+            },
+            new()
+            {
+                Name = "Lower Body Strength",
+                Date = DateTime.Today.AddDays(3),
+                Status = SessionStatus.Planned,
+                Notes = "Leg strength training with a cooldown.",
+                SessionWorkouts =
+                [
+                    Link("Back Squat", 1),
+                    Link("Leg Press", 2),
+                    Link("Hamstring Stretch", 3)
+                ]
+            },
+            new()
+            {
+                Name = "Back and Core",
+                Date = DateTime.Today.AddDays(5),
+                Status = SessionStatus.Planned,
+                Notes = "Back exercises followed by core training.",
+                SessionWorkouts =
+                [
+                    Link("Lat Pulldown", 1),
+                    Link("Seated Cable Row", 2),
+                    Link("Plank", 3),
+                    Link("Child's Pose", 4)
+                ]
+            },
+
+            // History: chest
+            new()
+            {
+                Name = "Chest Strength",
+                Date = DateTime.Today.AddDays(-1),
+                Status = SessionStatus.Completed,
+                DurationMinutes = 70,
+                Notes = "Completed all exercises, including rest between sets.",
+                SessionWorkouts =
+                [
+                    Link("Arm Circles", 1, true),
+                    Link("Bench Press", 2, true),
+                    Link("Incline Dumbbell Press", 3, true),
+                    Link("Push-Ups", 4, true)
+                ]
+            },
+
+            // History: legs
+            new()
+            {
+                Name = "Leg Strength",
+                Date = DateTime.Today.AddDays(-3),
+                Status = SessionStatus.Completed,
+                DurationMinutes = 75,
+                Notes = "Completed squat and leg press training with a cooldown.",
+                SessionWorkouts =
+                [
+                    Link("Back Squat", 1, true),
+                    Link("Leg Press", 2, true),
+                    Link("Hamstring Stretch", 3, true)
+                ]
+            },
+
+            // History: core
+            new()
+            {
+                Name = "Core Conditioning",
+                Date = DateTime.Today.AddDays(-5),
+                Status = SessionStatus.Completed,
+                DurationMinutes = 35,
+                Notes = "Focused on controlled movement and core endurance.",
+                SessionWorkouts =
+                [
+                    Link("Plank", 1, true),
+                    Link("Cable Woodchop", 2, true),
+                    Link("Pilates Hundred", 3, true)
+                ]
+            },
+
+            // History: back — partially completed
+            new()
+            {
+                Name = "Back and Pulling",
+                Date = DateTime.Today.AddDays(-7),
+                Status = SessionStatus.Completed,
+                DurationMinutes = 40,
+                Notes = "Finished early; deadlifts were not completed.",
+                SessionWorkouts =
+                [
+                    Link("Lat Pulldown", 1, true),
+                    Link("Seated Cable Row", 2, true),
+                    Link("Deadlift", 3)
+                ]
+            },
+
+            // History: shoulders
+            new()
+            {
+                Name = "Shoulder Training",
+                Date = DateTime.Today.AddDays(-9),
+                Status = SessionStatus.Completed,
+                DurationMinutes = 55,
+                Notes = "Completed shoulder exercises after warming up.",
+                SessionWorkouts =
+                [
+                    Link("Arm Circles", 1, true),
+                    Link("Overhead Press", 2, true),
+                    Link("Lateral Raises", 3, true),
+                    Link("Face Pulls", 4, true)
+                ]
+            },
+
+
+            // History: arms — partially completed
+            new()
+            {
+                Name = "Arms Express",
+                Date = DateTime.Today.AddDays(-15),
+                Status = SessionStatus.Completed,
+                DurationMinutes = 35,
+                Notes = "Completed arm exercises but skipped the final push-ups.",
+                SessionWorkouts =
+                [
+                    Link("Bicep Curls", 1, true),
+                    Link("Tricep Pushdowns", 2, true),
+                    Link("Push-Ups", 3)
+                ]
+            },
+
+            // History: power
+            new()
+            {
+                Name = "Lower Body Power",
+                Date = DateTime.Today.AddDays(-18),
+                Status = SessionStatus.Completed,
+                DurationMinutes = 65,
+                Notes = "Power training with rest between exercises.",
+                SessionWorkouts =
+                [
+                    Link("Treadmill Sprints", 1, true),
+                    Link("Box Jumps", 2, true),
+                    Link("Leg Press", 3, true),
+                    Link("Hamstring Stretch", 4, true)
+                ]
+            },
+
+            // Archived history: recovery
+            new()
+            {
+                Name = "Core and Recovery",
+                Date = DateTime.Today.AddDays(-21),
+                Status = SessionStatus.Completed,
+                DurationMinutes = 25,
+                IsArchived = true,
+                Notes = "Archived recovery session.",
+                SessionWorkouts =
+                [
+                    Link("Pilates Hundred", 1, true),
+                    Link("Plank", 2, true),
+                    Link("Child's Pose", 3, true)
+                ]
+            },
+
+            // Archived history: back — partially completed
+            new()
+            {
+                Name = "Back Strength",
+                Date = DateTime.Today.AddDays(-28),
+                Status = SessionStatus.Completed,
+                DurationMinutes = 55,
+                IsArchived = true,
+                Notes = "Completed lifting exercises but skipped the cooldown.",
+                SessionWorkouts =
+                [
+                    Link("Deadlift", 1, true),
+                    Link("Seated Cable Row", 2, true),
+                    Link("Lat Pulldown", 3, true),
+                    Link("Child's Pose", 4)
+                ]
+            }
+        };
+
+        db.Sessions.AddRange(sessions);
+        db.SaveChanges();
+    }
 }

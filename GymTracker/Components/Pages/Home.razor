@@ -1,7 +1,39 @@
 ﻿@page "/"
 
-<PageTitle>Home</PageTitle>
+<PageTitle>GymTracker</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="menu-header">
+    <h1>GymTracker</h1>
+    <p class="menu-overview">
+        Welcome to GymTracker, a simple way to plan and record your gym training. Browse and filter a library of
+        workouts by body target, equipment, intensity and more, add your own custom exercises, and run
+        training sessions. Your session history lets you look back on what you've done.<br>
+    </p>
+    <h4>What would you like to do?</h4>
+</div>
 
-Welcome to your new app.
+<div class="menu-grid">
+    <a class="menu-card" href="workouts">
+        <span class="menu-icon">🏋️</span>
+        <h4>Workouts</h4>
+        <p>Browse, filter and manage all workouts.</p>
+    </a>
+
+    <a class="menu-card" href="workouts/create">
+        <span class="menu-icon">➕</span>
+        <h4>Create Workout</h4>
+        <p>Add your own custom workout.</p>
+    </a>
+
+    <a class="menu-card" href="sessions">
+        <span class="menu-icon">⏱️</span>
+        <h4>Sessions</h4>
+        <p>Start and track a gym session.</p>
+    </a>
+
+    <a class="menu-card" href="sessions/history">
+        <span class="menu-icon">📅</span>
+        <h4>Session History</h4>
+        <p>Review your past sessions.</p>
+    </a>
+</div>

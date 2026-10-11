@@ -21,8 +21,8 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<GymContext>();
     db.Database.EnsureCreated();
-    SeedData.Initialize(db);
-    SeedData.InitializeSessions(db); 
+    SeedData.InitaliseWorkouts(db);
+    SeedData.InitaliseSessions(db);
 }
 
 // Configure the HTTP request pipeline.

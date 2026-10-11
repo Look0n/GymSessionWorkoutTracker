@@ -146,10 +146,10 @@ public class WorkoutServiceTests
     [Test]
     public void SeedData_AddsWorkoutsOnlyOnce()
     {
-        SeedData.Initialize(_db);
+        SeedData.InitaliseWorkouts(_db);
         int firstCount = _service.GetAll().Count;
 
-        SeedData.Initialize(_db); // second call should do nothing
+        SeedData.InitaliseWorkouts(_db); // second time should do nothing
 
         Assert.That(firstCount, Is.EqualTo(22));
         Assert.That(_service.GetAll(), Has.Count.EqualTo(firstCount));

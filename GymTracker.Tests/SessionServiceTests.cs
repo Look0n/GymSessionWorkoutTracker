@@ -29,7 +29,7 @@ public class SessionServiceTests
         _db = new GymContext(new DbContextOptionsBuilder<GymContext>()
             .UseSqlite(_connection).Options);
         _db.Database.EnsureCreated();
-        SeedData.Initialize(_db);
+        SeedData.InitaliseWorkouts(_db); //required by the sessions
         _ids = _db.Workouts.OrderBy(w => w.Id).Take(2).Select(w => w.Id).ToList();
         _clock = new TestClock();
         _service = new SessionService(_db, _clock);
